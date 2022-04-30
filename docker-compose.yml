@@ -1,0 +1,16 @@
+version: '3'
+services:
+  app:
+    build: .
+    tty: true
+    volumes:
+      - .:/app
+    depends_on:
+      - voicevox
+  voicevox:
+    image: voicevox/voicevox_engine:cpu-ubuntu20.04-latest
+    tty: true
+    ports:
+      - 50021:50021
+    volumes:
+      - .:/voicevox
