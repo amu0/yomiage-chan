@@ -3,6 +3,8 @@ const discordjs = require("discord.js");
 const voice = require("@discordjs/voice");
 const connectionManager = require("./src/connectionManager");
 
+const OWNER_ID = process.env.OWNER_ID;
+
 const client = new discordjs.Client({ intents: Object.keys(discordjs.Intents.FLAGS) });
 
 let connectionManagers = new Map();// key: guildId, value: connectionManager
@@ -71,6 +73,26 @@ client.on("interactionCreate", async (interaction) => {
       });
     }
     interaction.reply("設定しました");
+  }
+
+  if (cmdName === "shutdown") {
+    if (interaction.user.id !== OWNER_ID) return interaction.reply("このコマンドはオーナーのみ利用可能です");
+    await interaction.reply("シャットダウン処理を開始します");
+
+    let promises = [];
+    connectionManagers.forEach((manager, guildId) => {
+      promises.push(new Promise(async (resolve) => {
+        await manager.readingCh.send("BOTがシャットダウンされます");
+        await disconnect(guildId);
+        console.log(guildId);
+        resolve();
+      }));
+    });
+
+    Promise.all(promises).then(() => {
+      console.log("シャットダウンします");
+      process.exit(0);
+    });
   }
 });
 
@@ -201,6 +223,10 @@ function setCommands(message) {
           type: "BOOLEAN"
         }
       ]
+    },
+    {
+      name: "shutdown",
+      description: "BOTをシャットダウンします。オーナーのみ利用可能です"
     }
   ];
 
