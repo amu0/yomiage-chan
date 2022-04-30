@@ -105,6 +105,18 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
 
   // 入退出を読み上げ
   if (oldStateCh !== newState.channel) {
+    const joinLeftCheck = await Guild.findOne({
+      attributes: ["joinLeftCheck"],
+      where: { guildId: oldState.guild.id }
+    }).then((model) => {
+      if (model !== null && model.getDataValue("joinLeftCheck") !== null) {
+        return model.getDataValue("joinLeftCheck");
+      } else {
+        return true;
+      }
+    });
+    if (!joinLeftCheck) return;
+
     // ユーザーが参加
     if (newState.channel && newState.channel.members.has(client.user.id)) {
       const msg = `${newState.member.displayName}が参加`;

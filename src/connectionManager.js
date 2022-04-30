@@ -2,6 +2,7 @@
 const voice = require("@discordjs/voice");
 const axios = require("axios");
 const Speaker = require("../models/speaker");
+const Guild = require("../models/guild");
 const VOICEVOX_URL = process.env.VOICEVOX_URL;
 
 class connectionManager {
@@ -72,8 +73,20 @@ class connectionManager {
       }
     });
 
+    // 名前の読み上げを行うか、DBに問い合わせる
+    const readName = await Guild.findOne({
+      attributes: ["readName"],
+      where: { guildId: msg.guildId }
+    }).then((model) => {
+      if (model !== null && model.getDataValue("readName") !== null) {
+        return model.getDataValue("readName");
+      } else {
+        return true;
+      }
+    });
+
     this.readMsg({
-      userName: msg.member.displayName,
+      userName: readName ? msg.member.displayName : "",
       message: content,
       speakerId: speakerId
     });
