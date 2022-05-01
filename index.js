@@ -12,8 +12,10 @@ let connectionManagers = new Map();// key: guildId, value: connectionManager
 // DB
 const Speaker = require("./models/speaker");
 const Guild = require("./models/guild");
+const Dictionary = require("./models/dictionary");
 Speaker.sync();
 Guild.sync();
+Dictionary.sync();
 
 client.once("ready", async () => {
   console.log(`${client.user.tag}でログインしています。`);
@@ -24,9 +26,9 @@ client.on("interactionCreate", async (interaction) => {
   if (!interaction.guild) return;
   const cmdName = interaction.commandName;
   const manager = connectionManagers.get(interaction.guildId);
-  const voiceChannel = interaction.member.voice.channel;
 
   if (cmdName === "join") {
+    const voiceChannel = interaction.member.voice.channel;
     if (!voiceChannel) return interaction.reply({ content: "先にVCに参加してください", ephemeral: true });
     if (!voiceChannel.joinable) return interaction.reply({ content: "BOTがVCに参加できません", ephemeral: true });
     if (!voiceChannel.speakable) return interaction.reply({ content: "BOTにVCの発言権がありません", ephemeral: true });
@@ -75,6 +77,38 @@ client.on("interactionCreate", async (interaction) => {
     interaction.reply("設定しました");
   }
 
+  if (cmdName === "word") {
+    const word = interaction.options.getString("単語");
+    const reading = interaction.options.getString("読み");
+
+    if (word.length > 255 || (reading && reading.length > 255)) {
+      return interaction.reply("単語と読みはそれぞれ255文字以内で設定してください");
+    }
+
+    if (reading === null) {
+      Dictionary.destroy({
+        where: [{
+          guildId: interaction.guildId,
+          word: word
+        }]
+      }).then((number) => {
+        if (number === 0) {
+          interaction.reply("削除対象の単語が見つかりませんでした");
+        } else {
+          interaction.reply("単語を削除しました");
+        }
+      });
+    } else {
+      Dictionary.upsert({
+        guildId: interaction.guildId,
+        word: word,
+        reading: reading
+      }).then(() => {
+        interaction.reply("単語を設定しました");
+      });
+    }
+  }
+
   if (cmdName === "shutdown") {
     if (interaction.user.id !== OWNER_ID) return interaction.reply("このコマンドはオーナーのみ利用可能です");
     await interaction.reply("シャットダウン処理を開始します");
@@ -84,7 +118,6 @@ client.on("interactionCreate", async (interaction) => {
       promises.push(new Promise(async (resolve) => {
         await manager.readingCh.send("BOTがシャットダウンされます");
         await disconnect(guildId);
-        console.log(guildId);
         resolve();
       }));
     });
@@ -145,7 +178,8 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
       manager.readMsg({
         userName: "",
         message: msg,
-        speakerId: 0
+        speakerId: 0,
+        guildId: newState.guild.id
       });
       manager.readingCh.send(msg);
     }
@@ -157,7 +191,8 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
       manager.readMsg({
         userName: "",
         message: msg,
-        speakerId: 0
+        speakerId: 0,
+        guildId: oldState.guild.id
       });
       manager.readingCh.send(msg);
     }
@@ -221,6 +256,23 @@ function setCommands(message) {
           name: "join_left_check",
           description: "ユーザーの入退出の読み上げ",
           type: "BOOLEAN"
+        }
+      ]
+    },
+    {
+      name: "word",
+      description: "単語を登録・編集します",
+      options: [
+        {
+          name: "単語",
+          description: "単語を入力してください",
+          type: "STRING",
+          required: true
+        },
+        {
+          name: "読み",
+          description: "読み（空白の場合は単語を削除します）",
+          type: "STRING"
         }
       ]
     },

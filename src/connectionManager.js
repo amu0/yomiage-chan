@@ -3,6 +3,7 @@ const voice = require("@discordjs/voice");
 const axios = require("axios");
 const Speaker = require("../models/speaker");
 const Guild = require("../models/guild");
+const Dictionary = require("../models/dictionary");
 const VOICEVOX_URL = process.env.VOICEVOX_URL;
 
 class connectionManager {
@@ -56,14 +57,14 @@ class connectionManager {
     }
   }
 
-  async messageProcessor(msg) {
-    if (!this.isConnecting() || msg.channelId !== this.readingCh.id) return;
-    const content = msg.content.length > 255 ? msg.content.slice(0, 128) + "、以下略" : msg.content;
+  async messageProcessor(rawMsg) {
+    if (!this.isConnecting() || rawMsg.channelId !== this.readingCh.id) return;
+    const message = rawMsg.content.length > 255 ? rawMsg.content.slice(0, 128) + "、以下略" : rawMsg.content;
     const speakerId = await Speaker.findOne({
       attributes: ["speakerId"],
       where: {
-        userId: msg.member.user.id,
-        guildId: msg.guildId
+        userId: rawMsg.member.user.id,
+        guildId: rawMsg.guildId
       }
     }).then((model) => {
       try {
@@ -74,9 +75,9 @@ class connectionManager {
     });
 
     // 名前の読み上げを行うか、DBに問い合わせる
-    const readName = await Guild.findOne({
+    const isReadName = await Guild.findOne({
       attributes: ["readName"],
-      where: { guildId: msg.guildId }
+      where: { guildId: rawMsg.guildId }
     }).then((model) => {
       if (model !== null && model.getDataValue("readName") !== null) {
         return model.getDataValue("readName");
@@ -86,21 +87,42 @@ class connectionManager {
     });
 
     this.readMsg({
-      userName: readName ? msg.member.displayName : "",
-      message: content,
-      speakerId: speakerId
+      userName: isReadName ? rawMsg.member.displayName : "",
+      message: message,
+      speakerId: speakerId,
+      guildId: rawMsg.guildId
     });
   }
 
-  readMsg(msg) {
+  async readMsg(msg) {
     if (msg) this.readQueue.push(msg);
-
-    console.log("readMsg: " + msg, this.readQueue, this.player.state.status);
 
     if (this.readQueue.length === 0 || this.player.state.status !== voice.AudioPlayerStatus.Idle) return;
 
     const readMsg = this.readQueue[0];
-    const text = readMsg.userName === "" ? readMsg.message : `${readMsg.userName}、${readMsg.message}`
+    let text = readMsg.userName === "" ? readMsg.message : `${readMsg.userName}、${readMsg.message}`
+
+    // 辞書による置き換え
+    let promises = [];
+    await Dictionary.findAll({
+      where: { guildId: readMsg.guildId },
+      attributes: ["word", "reading"]
+    }).then((words) => {
+      words.forEach((word) => {
+        const promise = new Promise((resolve) => {
+          try {
+            text = text.toLowerCase().replaceAll(word.getDataValue("word"), word.getDataValue("reading"));
+          } catch (e) {
+            console.error("辞書による置き換えに失敗しました: " + e);
+          }
+          resolve();
+        });
+        promises.push(promise);
+      });
+    });
+
+    await Promise.all(promises);
+    if (text.length > 255) text = text.slice(0, 128) + "、以下略";
 
     axios({
       method: "post",
