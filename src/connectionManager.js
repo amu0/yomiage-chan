@@ -59,11 +59,27 @@ class connectionManager {
 
   async messageProcessor(rawMsg) {
     if (!this.isConnecting() || rawMsg.channelId !== this.readingCh.id) return;
-
     // 長いメッセージは省略する
     let message = rawMsg.content.replaceAll(/https?:\/\/[\w!?/+\-_~;.,*&@#$%()'[\]]+/g, "ユーアールエル");
     message = message.length > 255 ? message.slice(0, 128) + "、以下略" : message;
-    
+
+    // 添付ファイル
+    let attachmentTypes = [];
+    await rawMsg.attachments.forEach((attachment) => {
+      const type = attachment.contentType;
+      if (type.startsWith("image")) {
+        if (!attachmentTypes.includes("画像")) attachmentTypes.push("画像");
+      } else if (type.startsWith("video")) {
+        if (!attachmentTypes.includes("動画")) attachmentTypes.push("動画");
+      } else if (type.startsWith("audio")) {
+        if (!attachmentTypes.includes("音声")) attachmentTypes.push("音声");
+      } else if (!attachmentTypes.includes("ファイル")) {
+        attachmentTypes.push("ファイル");
+      }
+    });
+    console.log(attachmentTypes.join("と"));
+    message = `${message}。${attachmentTypes.join("と")}`
+
     const speakerId = await Speaker.findOne({
       attributes: ["speakerId"],
       where: {
