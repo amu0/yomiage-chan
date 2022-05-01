@@ -77,7 +77,6 @@ class connectionManager {
         attachmentTypes.push("ファイル");
       }
     });
-    console.log(attachmentTypes.join("と"));
     message = `${message}。${attachmentTypes.join("と")}`
 
     const speakerId = await Speaker.findOne({
