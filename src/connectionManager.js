@@ -59,7 +59,11 @@ class connectionManager {
 
   async messageProcessor(rawMsg) {
     if (!this.isConnecting() || rawMsg.channelId !== this.readingCh.id) return;
-    const message = rawMsg.content.length > 255 ? rawMsg.content.slice(0, 128) + "、以下略" : rawMsg.content;
+
+    // 長いメッセージは省略する
+    let message = rawMsg.content.replaceAll(/https?:\/\/[\w!?/+\-_~;.,*&@#$%()'[\]]+/g, "ユーアールエル");
+    message = message.length > 255 ? message.slice(0, 128) + "、以下略" : message;
+    
     const speakerId = await Speaker.findOne({
       attributes: ["speakerId"],
       where: {
@@ -67,11 +71,7 @@ class connectionManager {
         guildId: rawMsg.guildId
       }
     }).then((model) => {
-      try {
-        return model.getDataValue("speakerId") || 0;
-      } catch {
-        return 0;
-      }
+      return model.getDataValue("speakerId") || 0;
     });
 
     // 名前の読み上げを行うか、DBに問い合わせる
