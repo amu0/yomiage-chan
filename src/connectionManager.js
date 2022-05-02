@@ -86,7 +86,11 @@ class connectionManager {
         guildId: rawMsg.guildId
       }
     }).then((model) => {
-      return model.getDataValue("speakerId") || 0;
+      if (model === null) {
+        return 0;
+      } else {
+        return model.getDataValue("speakerId") || 0;
+      }
     });
 
     // 名前の読み上げを行うか、DBに問い合わせる

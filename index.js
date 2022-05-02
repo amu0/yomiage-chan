@@ -1,7 +1,9 @@
 require("dotenv").config();
+const fs = require("fs");
 const discordjs = require("discord.js");
 const voice = require("@discordjs/voice");
 const connectionManager = require("./src/connectionManager");
+const { exportDictionary, importDictionary } = require("./src/util")
 
 const OWNER_ID = process.env.OWNER_ID;
 
@@ -22,11 +24,30 @@ client.once("ready", async () => {
 });
 
 client.on("interactionCreate", async (interaction) => {
-  if (!interaction.isCommand) return;
   if (!interaction.guild) return;
+
+  // 辞書のインポート
+  if (interaction.commandName === "辞書として追加") {
+    const attachments = interaction.targetMessage.attachments;
+    if (attachments.size !== 1) return interaction.reply("ファイルを一つだけ指定してください");
+
+    const url = attachments.first().attachment;
+    const fileName = attachments.first().name;
+    if (!fileName.endsWith(".dict")) return interaction.reply(".dictファイルを指定してください");
+
+    await importDictionary(url, fileName, interaction.guildId)
+    fs.unlink(fileName, (err) => {
+      if (err) console.error(err);
+    });
+
+    interaction.reply("インポートが完了しました");
+  }
+
+  if (!interaction.isCommand) return;
   const cmdName = interaction.commandName;
   const manager = connectionManagers.get(interaction.guildId);
 
+  // 読み上げを開始
   if (cmdName === "join") {
     const voiceChannel = interaction.member.voice.channel;
     if (!voiceChannel) return interaction.reply({ content: "先にVCに参加してください", ephemeral: true });
@@ -43,6 +64,7 @@ client.on("interactionCreate", async (interaction) => {
     }
   }
 
+  // 読み上げを終了
   if (cmdName === "leave") {
     if (manager) {
       await disconnect(interaction.guildId);
@@ -52,6 +74,7 @@ client.on("interactionCreate", async (interaction) => {
     }
   }
 
+  // 話者設定
   if (cmdName === "speaker") {
     await Speaker.upsert({
       userId: interaction.user.id,
@@ -61,6 +84,7 @@ client.on("interactionCreate", async (interaction) => {
     interaction.reply(`話者を設定しました(${interaction.options.getNumber("speaker")})`);
   }
 
+  // Guild設定
   if (cmdName === "settings") {
     if (interaction.options.getBoolean("read_name") !== null) {
       await Guild.upsert({
@@ -77,6 +101,7 @@ client.on("interactionCreate", async (interaction) => {
     interaction.reply("設定しました");
   }
 
+  // 辞書登録・削除
   if (cmdName === "word") {
     const word = interaction.options.getString("単語");
     const reading = interaction.options.getString("読み");
@@ -109,6 +134,7 @@ client.on("interactionCreate", async (interaction) => {
     }
   }
 
+  // Shutdown
   if (cmdName === "shutdown") {
     if (interaction.user.id !== OWNER_ID) return interaction.reply("このコマンドはオーナーのみ利用可能です");
     await interaction.reply("シャットダウン処理を開始します");
@@ -127,7 +153,18 @@ client.on("interactionCreate", async (interaction) => {
       process.exit(0);
     });
   }
+
+  // 辞書の出力
+  if (cmdName === "dictionary" && interaction.options.getSubcommand() === "export") {
+    const fileName = await exportDictionary(interaction.guildId);
+    fs.unlink(fileName, (err) => {
+      if (err) console.error(err);
+    });
+    
+    interaction.reply({ files: [fileName] });
+  }
 });
+
 
 client.on("messageCreate", async message => {
   if (message.author.bot) return;
@@ -279,6 +316,22 @@ function setCommands(message) {
     {
       name: "shutdown",
       description: "BOTをシャットダウンします。オーナーのみ利用可能です"
+    },
+    {
+      name: "dictionary",
+      description: "辞書の設定をします",
+      options: [
+        {
+          name: "export",
+          description: "辞書を出力します",
+          type: "SUB_COMMAND"
+        }
+      ]
+    },
+    {
+      name: "辞書として追加",
+      description: "",
+      type: "MESSAGE"
     }
   ];
 
