@@ -26,10 +26,8 @@ async function exportDictionary(guildId) {
     })
   });
 
-  await Promise.all(promises).then(() => {
-    stream.end();
-  });
-
+  await Promise.all(promises);
+  stream.end();
   return fileName;
 }
 
@@ -50,33 +48,24 @@ async function importDictionary(url, fileName, guildId) {
 
   const reader = readline.createInterface({ input: stream });
 
-  let promises = [];
-  reader.on("line", async (data) => {
+  let words = [];
+  reader.on("line", (data) => {
     if (data.split(",").length !== 2) return;
-    let word, reading;
-    try {
-      word = data.split(",")[0].trim();
-      reading = data.split(",")[1].trim();
-    } catch (e) {
-      console.error(e);
-      return;
-    }
-
-    promises.push(Dictionary.upsert({
+    words.push({
       guildId: guildId,
-      word: word,
-      reading: reading
-    }));
-
+      word: data.split(",")[0].trim(),
+      reading: data.split(",")[1].trim()
+    });
   });
 
-  promises.push(new Promise((resolve) => {
+  await new Promise((resolve) => {
     reader.on("close", () => {
-      resolve();
+      Dictionary.bulkCreate(words, {
+        updateOnDuplicate: ["guildId", "word"]
+      }).then(resolve);
     });
-  }));
+  });
 
-  await Promise.all(promises);
   return;
 }
 

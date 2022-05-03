@@ -28,6 +28,7 @@ client.on("interactionCreate", async (interaction) => {
 
   // 辞書のインポート
   if (interaction.commandName === "辞書として追加") {
+    await interaction.reply("辞書をインポートします");
     const attachments = interaction.targetMessage.attachments;
     if (attachments.size !== 1) return interaction.reply("ファイルを一つだけ指定してください");
 
@@ -39,8 +40,7 @@ client.on("interactionCreate", async (interaction) => {
     fs.unlink(fileName, (err) => {
       if (err) console.error(err);
     });
-
-    interaction.reply("インポートが完了しました");
+    interaction.editReply("辞書のインポートが完了しました");
   }
 
   if (!interaction.isCommand) return;
@@ -157,11 +157,20 @@ client.on("interactionCreate", async (interaction) => {
   // 辞書の出力
   if (cmdName === "dictionary" && interaction.options.getSubcommand() === "export") {
     const fileName = await exportDictionary(interaction.guildId);
+    await interaction.reply({ files: [fileName] });
     fs.unlink(fileName, (err) => {
       if (err) console.error(err);
     });
-    
-    interaction.reply({ files: [fileName] });
+  }
+
+  // 辞書の削除
+  if (cmdName === "dictionary" && interaction.options.getSubcommand() === "delete") {
+    await interaction.reply("辞書を削除します");
+    Dictionary.destroy({
+      where: { guildId: interaction.guildId }
+    }).then(() => {
+      interaction.editReply("辞書を削除しました");
+    });
   }
 });
 
@@ -324,6 +333,11 @@ function setCommands(message) {
         {
           name: "export",
           description: "辞書を出力します",
+          type: "SUB_COMMAND"
+        },
+        {
+          name: "delete",
+          description: "辞書を削除します",
           type: "SUB_COMMAND"
         }
       ]
