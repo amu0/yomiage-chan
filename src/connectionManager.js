@@ -67,6 +67,12 @@ class connectionManager {
     let attachmentTypes = [];
     await rawMsg.attachments.forEach((attachment) => {
       const type = attachment.contentType;
+
+      if (type === null && !attachmentTypes.includes("ファイル")) {
+        attachmentTypes.push("ファイル");
+        return;
+      }
+
       if (type.startsWith("image")) {
         if (!attachmentTypes.includes("画像")) attachmentTypes.push("画像");
       } else if (type.startsWith("video")) {
