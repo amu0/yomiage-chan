@@ -42,7 +42,14 @@ class connectionManager {
     });
     this.connection.subscribe(this.player);
 
-    interaction.reply({ content: "接続しました" });
+    interaction.reply({
+      embeds: [{
+        title: "INFO",
+        description: "読み上げを開始します",
+        color: "43a1ec",
+        timestamp: new Date()
+      }]
+    });
   }
 
   isConnecting() {
@@ -138,7 +145,7 @@ class connectionManager {
           try {
             text = text.toLowerCase().replaceAll(word.getDataValue("word"), word.getDataValue("reading"));
           } catch (e) {
-            console.error("辞書による置き換えに失敗しました: " + e);
+            console.error("辞書による置き換えに失敗しました: ", e);
           }
           resolve();
         });

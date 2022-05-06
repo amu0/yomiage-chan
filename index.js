@@ -28,19 +28,48 @@ client.on("interactionCreate", async (interaction) => {
 
   // 辞書のインポート
   if (interaction.commandName === "辞書として追加") {
-    await interaction.reply("辞書をインポートします");
+    await interaction.reply({
+      embeds: [{
+        title: "INFO",
+        description: "辞書のインポートを開始します",
+        color: "43a1ec",
+        footer: { text: client.user.username },
+        timestamp: new Date()
+      }]
+    });
     const attachments = interaction.targetMessage.attachments;
-    if (attachments.size !== 1) return interaction.reply("ファイルを一つだけ指定してください");
+    if (attachments.size !== 1) return interaction.editReply({
+      embeds: [{
+        title: "エラー",
+        description: "ファイルを一つだけ指定してください",
+        color: "ed4245",
+        timestamp: new Date()
+      }]
+    });
 
     const url = attachments.first().attachment;
     const fileName = attachments.first().name;
-    if (!fileName.endsWith(".dict")) return interaction.reply(".dictファイルを指定してください");
+    if (!fileName.endsWith(".dict")) return interaction.editReply({
+      embeds: [{
+        title: "エラー",
+        description: "dictファイルを指定してください",
+        color: "ed4245",
+        timestamp: new Date()
+      }]
+    });
 
     await importDictionary(url, fileName, interaction.guildId)
     fs.unlink(fileName, (err) => {
       if (err) console.error(err);
     });
-    interaction.editReply("辞書のインポートが完了しました");
+    interaction.editReply({
+      embeds: [{
+        title: "INFO",
+        description: "辞書のインポートが完了しました",
+        color: "43a1ec",
+        timestamp: new Date()
+      }]
+    });
   }
 
   if (!interaction.isCommand) return;
@@ -50,12 +79,44 @@ client.on("interactionCreate", async (interaction) => {
   // 読み上げを開始
   if (cmdName === "join") {
     const voiceChannel = interaction.member.voice.channel;
-    if (!voiceChannel) return interaction.reply({ content: "先にVCに参加してください", ephemeral: true });
-    if (!voiceChannel.joinable) return interaction.reply({ content: "BOTがVCに参加できません", ephemeral: true });
-    if (!voiceChannel.speakable) return interaction.reply({ content: "BOTにVCの発言権がありません", ephemeral: true });
+    if (!voiceChannel) return interaction.reply({
+      ephemeral: true,
+      embeds: [{
+        title: "エラー",
+        description: "先にVCに接続してください",
+        color: "ed4245",
+        timestamp: new Date()
+      }]
+    });
+    if (!voiceChannel.joinable) return interaction.reply({
+      ephemeral: true,
+      embeds: [{
+        title: "エラー",
+        description: "BOTがVCに接続できません",
+        color: "ed4245",
+        timestamp: new Date()
+      }]
+    });
+    if (!voiceChannel.speakable) return interaction.reply({
+      ephemeral: true,
+      embeds: [{
+        title: "エラー",
+        description: "BOTにVCの発言権を与えてください",
+        color: "ed4245",
+        timestamp: new Date()
+      }]
+    });
 
-    if (manager) {
-      if (manager.isConnecting()) return interaction.reply({ content: "既に接続しています", ephemeral: true });
+    if (manager && manager.isConnecting()) {
+      return interaction.reply({
+        ephemeral: true,
+        embeds: [{
+          title: "エラー",
+          description: "既に接続しています",
+          color: "ed4245",
+          timestamp: new Date()
+        }]
+      });
     } else {
       connectionManagers.set(
         interaction.guildId,
@@ -68,9 +129,24 @@ client.on("interactionCreate", async (interaction) => {
   if (cmdName === "leave") {
     if (manager) {
       await disconnect(interaction.guildId);
-      interaction.reply("切断しました");
+      interaction.reply({
+        embeds: [{
+          title: "読み上げ終了",
+          description: "読み上げを終了しました",
+          color: "43a1ec",
+          timestamp: new Date()
+        }]
+      });
     } else {
-      interaction.reply({ content: "既に切断しています", ephemeral: true });
+      interaction.reply({
+        ephemeral: true,
+        embeds: [{
+          title: "エラー",
+          description: "既に切断しています",
+          color: "ed4245",
+          timestamp: new Date()
+        }]
+      });
     }
   }
 
@@ -81,7 +157,14 @@ client.on("interactionCreate", async (interaction) => {
       guildId: interaction.guildId,
       speakerId: interaction.options.getNumber("speaker")
     });
-    interaction.reply(`話者を設定しました(${interaction.options.getNumber("speaker")})`);
+    interaction.reply({
+      embeds: [{
+        title: "INFO",
+        description: "話者を設定しました",
+        color: "43a1ec",
+        timestamp: new Date()
+      }]
+    });
   }
 
   // Guild設定
@@ -90,7 +173,7 @@ client.on("interactionCreate", async (interaction) => {
       await Guild.upsert({
         guildId: interaction.guildId,
         readName: interaction.options.getBoolean("read_name")
-      });
+      })
     }
     if (interaction.options.getBoolean("join_left_check") !== null) {
       await Guild.upsert({
@@ -98,7 +181,33 @@ client.on("interactionCreate", async (interaction) => {
         joinLeftCheck: interaction.options.getBoolean("join_left_check")
       });
     }
-    interaction.reply("設定しました");
+    const settings = await Guild.findByPk(interaction.guildId);
+    const isReadName = settings.get("readName") === null ?
+      "true" : settings.get("readName").toString();
+    const isJoinLeftCheck = settings.get("joinLeftCheck") === null ?
+      "true" : settings.get("joinLeftCheck").toString();
+
+
+    interaction.reply({
+      embeds: [{
+        title: "INFO",
+        description: "設定しました",
+        fields: [
+          {
+            name: "名前の読み上げ",
+            value: isReadName,
+            inline: true
+          },
+          {
+            name: "入退出の読み上げ",
+            value: isJoinLeftCheck,
+            inline: true
+          }
+        ],
+        color: "43a1ec",
+        timestamp: new Date()
+      }]
+    });
   }
 
   // 辞書登録・削除
@@ -107,7 +216,15 @@ client.on("interactionCreate", async (interaction) => {
     const reading = interaction.options.getString("読み");
 
     if (word.length > 255 || (reading && reading.length > 255)) {
-      return interaction.reply("単語と読みはそれぞれ255文字以内で設定してください");
+      return interaction.reply({
+        ephemeral: true,
+        embeds: [{
+          title: "エラー",
+          description: "単語と読みはそれぞれ255文字以内で設定してください",
+          color: "ed4245",
+          timestamp: new Date()
+        }]
+      });
     }
 
     if (reading === null) {
@@ -118,9 +235,27 @@ client.on("interactionCreate", async (interaction) => {
         }]
       }).then((number) => {
         if (number === 0) {
-          interaction.reply("削除対象の単語が見つかりませんでした");
+          interaction.reply({
+            ephemeral: true,
+            embeds: [{
+              title: "エラー",
+              description: "削除対象の単語が見つかりませんでした",
+              color: "ed4245",
+              timestamp: new Date()
+            }]
+          });
         } else {
-          interaction.reply("単語を削除しました");
+          interaction.reply({
+            embeds: [{
+              title: "INFO",
+              description: "単語を削除しました",
+              fields: [
+                { name: "削除した単語", value: word }
+              ],
+              color: "43a1ec",
+              timestamp: new Date()
+            }]
+          });
         }
       });
     } else {
@@ -128,21 +263,63 @@ client.on("interactionCreate", async (interaction) => {
         guildId: interaction.guildId,
         word: word,
         reading: reading
-      }).then(() => {
-        interaction.reply("単語を設定しました");
+      }).then((model) => {
+        interaction.reply({
+          embeds: [{
+            title: "INFO",
+            description: "単語を設定しました",
+            fields: [
+              {
+                name: "単語",
+                value: model[0].getDataValue("word"),
+                inline: true
+              },
+              {
+                name: "読み",
+                value: model[0].getDataValue("reading"),
+                inline: true
+              }
+            ],
+            color: "43a1ec",
+            timestamp: new Date()
+          }]
+        });
       });
     }
   }
 
   // Shutdown
   if (cmdName === "shutdown") {
-    if (interaction.user.id !== OWNER_ID) return interaction.reply("このコマンドはオーナーのみ利用可能です");
-    await interaction.reply("シャットダウン処理を開始します");
+    if (interaction.user.id !== OWNER_ID) return interaction.reply({
+      ephemeral: true,
+      embeds: [{
+        title: "エラー",
+        description: "このコマンドはオーナーのみ利用可能です",
+        color: "ed4245",
+        timestamp: new Date()
+      }]
+    });
+
+    await interaction.reply({
+      embeds: [{
+        title: "INFO",
+        description: "シャットダウン処理を開始します",
+        color: "43a1ec",
+        timestamp: new Date()
+      }]
+    });
 
     let promises = [];
     connectionManagers.forEach((manager, guildId) => {
       promises.push(new Promise(async (resolve) => {
-        await manager.readingCh.send("BOTがシャットダウンされます");
+        await manager.readingCh.send({
+          embeds: [{
+            title: "INFO",
+            description: "BOTがシャットダウンされます",
+            color: "43a1ec",
+            timestamp: new Date()
+          }]
+        });
         await disconnect(guildId);
         resolve();
       }));
@@ -165,11 +342,26 @@ client.on("interactionCreate", async (interaction) => {
 
   // 辞書の削除
   if (cmdName === "dictionary" && interaction.options.getSubcommand() === "delete") {
-    await interaction.reply("辞書を削除します");
+    await interaction.reply({
+      embeds: [{
+        title: "INFO",
+        description: "辞書を削除します",
+        color: "43a1ec",
+        timestamp: new Date()
+      }]
+    });
+
     Dictionary.destroy({
       where: { guildId: interaction.guildId }
     }).then(() => {
-      interaction.editReply("辞書を削除しました");
+      interaction.editReply({
+        embeds: [{
+          title: "INFO",
+          description: "辞書の削除が完了しました",
+          color: "43a1ec",
+          timestamp: new Date()
+        }]
+      });
     });
   }
 });
@@ -182,7 +374,14 @@ client.on("messageCreate", async message => {
   if (message.content.toLowerCase() === "!set_cmd") return setCommands(message);
   if (message.content.toLowerCase() === "!del_cmd") {
     await client.application.commands.set([], message.guildId);
-    message.reply("コマンドを削除しました");
+    message.reply({
+      embeds: [{
+        title: "INFO",
+        description: "コマンドを削除しました",
+        color: "43a1ec",
+        timestamp: new Date()
+      }]
+    });
   }
 
   const manager = connectionManagers.get(message.guildId);
@@ -192,8 +391,18 @@ client.on("messageCreate", async message => {
 client.on("voiceStateUpdate", async (oldState, newState) => {
   const oldStateCh = oldState.channel
   const manager = connectionManagers.get(oldState.guild.id || newState.guild.id);
+
+  // 接続中のVCから誰もいなくなった場合は切断する
   if (oldStateCh && oldStateCh.members.has(client.user.id) && oldStateCh.members.size < 2) {
-    manager.readingCh.send("読み上げを終了します");
+    manager.readingCh.send({
+      embeds: [{
+        title: "INFO",
+        description: "誰もいなくなったので読み上げを終了します",
+        color: "43a1ec",
+        timestamp: new Date()
+      }]
+    });
+
     await disconnect(oldState.guild.id);
     return;
   }
@@ -206,9 +415,8 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
 
   // 入退出を読み上げ
   if (oldStateCh !== newState.channel) {
-    const joinLeftCheck = await Guild.findOne({
-      attributes: ["joinLeftCheck"],
-      where: { guildId: oldState.guild.id }
+    const joinLeftCheck = await Guild.findByPk(oldState.guild.id, {
+      attributes: ["joinLeftCheck"]
     }).then((model) => {
       if (model !== null && model.getDataValue("joinLeftCheck") !== null) {
         return model.getDataValue("joinLeftCheck");
@@ -221,13 +429,24 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
     // ユーザーが参加
     if (newState.channel && newState.channel.members.has(client.user.id)) {
       const msg = `${newState.member.displayName}が参加`;
+
       manager.readMsg({
         userName: "",
         message: msg,
         speakerId: 0,
         guildId: newState.guild.id
       });
-      manager.readingCh.send(msg);
+
+      manager.readingCh.send({
+        embeds: [{
+          author: {
+            name: msg,
+            icon_url: newState.member.displayAvatarURL()
+          },
+          color: "00ff00",
+          timestamp: new Date()
+        }]
+      });
     }
 
     // ユーザーが退出
@@ -240,7 +459,16 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
         speakerId: 0,
         guildId: oldState.guild.id
       });
-      manager.readingCh.send(msg);
+      manager.readingCh.send({
+        embeds: [{
+          author: {
+            name: msg,
+            icon_url: newState.member.displayAvatarURL()
+          },
+          color: "ff0000",
+          timestamp: new Date()
+        }]
+      });
     }
   }
 });
@@ -351,7 +579,14 @@ function setCommands(message) {
 
   client.application.commands.set(data, message.guildId)
     .then(() => {
-      message.reply("コマンドを設定しました");
+      message.reply({
+        embeds: [{
+          title: "INFO",
+          description: "コマンドを設定しました",
+          color: "43a1ec",
+          timestamp: new Date()
+        }]
+      });
     })
     .catch((error) => {
       console.log(error)
