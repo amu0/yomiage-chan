@@ -1,6 +1,7 @@
 "use strict";
 const voice = require("@discordjs/voice");
 const axios = require("axios");
+const { createEmbedMessage } = require("./util");
 const Speaker = require("../models/speaker");
 const Guild = require("../models/guild");
 const Dictionary = require("../models/dictionary");
@@ -42,14 +43,7 @@ class connectionManager {
     });
     this.connection.subscribe(this.player);
 
-    interaction.reply({
-      embeds: [{
-        title: "INFO",
-        description: "読み上げを開始します",
-        color: "43a1ec",
-        timestamp: new Date()
-      }]
-    });
+    interaction.reply(createEmbedMessage("info", "読み上げを開始します"));
   }
 
   isConnecting() {

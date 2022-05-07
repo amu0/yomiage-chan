@@ -3,6 +3,7 @@ const fs = require("fs");
 const readline = require("readline");
 const https = require("https");
 const Dictionary = require("../models/dictionary");
+const { MessageEmbed } = require("discord.js");
 
 async function exportDictionary(guildId) {
   const fileName = `${guildId}_${new Date().getTime()}.dict`;
@@ -69,7 +70,33 @@ async function importDictionary(url, fileName, guildId) {
   return;
 }
 
+function createEmbedMessage(type, message) {
+  switch (type) {
+    case "info":
+      return {
+        embeds: [{
+          title: "INFO",
+          description: message,
+          color: "43a1ec",
+          timestamp: new Date()
+        }]
+      };
+
+    case "error":
+      return {
+        ephemeral: true,
+        embeds: [{
+          title: "エラー",
+          description: message,
+          color: "ed4245",
+          timestamp: new Date()
+        }]
+      };
+  }
+}
+
 module.exports = {
   exportDictionary,
-  importDictionary
+  importDictionary,
+  createEmbedMessage
 };
