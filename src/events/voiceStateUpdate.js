@@ -9,14 +9,18 @@ module.exports = {
 
     // 接続中のVCから誰もいなくなった場合は切断する
     if (oldStateCh && oldStateCh.members.has(client.user.id) && oldStateCh.members.size < 2) {
-      manager.readingCh.send({
-        embeds: [{
-          title: "INFO",
-          description: "誰もいなくなったので読み上げを終了します",
-          color: "43a1ec",
-          timestamp: new Date()
-        }]
-      });
+      try {
+        manager.readingCh.send({
+          embeds: [{
+            title: "INFO",
+            description: "誰もいなくなったので読み上げを終了します",
+            color: "43a1ec",
+            timestamp: new Date()
+          }]
+        });
+      } catch (error) {
+        console.error(error)
+      }
 
       await disconnect(client.connectionManagers, oldState.guild.id);
       return;
@@ -52,16 +56,20 @@ module.exports = {
           guildId: newState.guild.id
         });
 
-        manager.readingCh.send({
-          embeds: [{
-            author: {
-              name: msg,
-              icon_url: newState.member.displayAvatarURL()
-            },
-            color: "00ff00",
-            timestamp: new Date()
-          }]
-        });
+        try {
+          manager.readingCh.send({
+            embeds: [{
+              author: {
+                name: msg,
+                icon_url: newState.member.displayAvatarURL()
+              },
+              color: "00ff00",
+              timestamp: new Date()
+            }]
+          });
+        } catch (error) {
+          console.error(error);
+        }
       }
 
       // ユーザーが退出
@@ -74,16 +82,21 @@ module.exports = {
           speakerId: 0,
           guildId: oldState.guild.id
         });
-        manager.readingCh.send({
-          embeds: [{
-            author: {
-              name: msg,
-              icon_url: newState.member.displayAvatarURL()
-            },
-            color: "ff0000",
-            timestamp: new Date()
-          }]
-        });
+
+        try {
+          manager.readingCh.send({
+            embeds: [{
+              author: {
+                name: msg,
+                icon_url: newState.member.displayAvatarURL()
+              },
+              color: "ff0000",
+              timestamp: new Date()
+            }]
+          });
+        } catch (error) {
+          console.error(error);
+        }
       }
     }
   }
