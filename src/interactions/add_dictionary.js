@@ -40,7 +40,7 @@ module.exports = {
     reader.on("line", (data) => {
       if (data.split(",").length !== 2) return;
       words.push({
-        guildId: guildId,
+        guildId: interaction.guildId,
         word: data.split(",")[0].trim(),
         reading: data.split(",")[1].trim()
       });
