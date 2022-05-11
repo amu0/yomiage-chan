@@ -1,4 +1,5 @@
 const Guild = require("../../models/guild");
+const Speaker = require("../../models/speaker");
 const { disconnect } = require("../util");
 
 module.exports = {
@@ -6,6 +7,7 @@ module.exports = {
   async execute(client, oldState, newState) {
     const oldStateCh = oldState.channel
     const manager = client.connectionManagers.get(oldState.guild.id || newState.guild.id);
+    if (!manager || !manager.isConnecting()) return;
 
     // 接続中のVCから誰もいなくなった場合は切断する
     if (oldStateCh && oldStateCh.members.has(client.user.id) && oldStateCh.members.size < 2) {
@@ -47,12 +49,16 @@ module.exports = {
 
       // ユーザーが参加
       if (newState.channel && newState.channel.members.has(client.user.id)) {
-        const msg = `${newState.member.displayName}が参加`;
+        const speakerId = await Speaker.findOne({
+          where: { userId: newState.id, guildId: newState.guild.id },
+          attributes: ["speakerId"]
+        });
 
+        const msg = `${newState.member.displayName}が参加`;
         manager.readMsg({
           userName: "",
           message: msg,
-          speakerId: 0,
+          speakerId: speakerId !== null ? speakerId.getDataValue("speakerId") : 0,
           guildId: newState.guild.id
         });
 
@@ -75,11 +81,16 @@ module.exports = {
       // ユーザーが退出
       if (oldStateCh && oldStateCh.members.has(client.user.id)
         && oldState.member.user.id !== client.user.id) {
+        const speakerId = await Speaker.findOne({
+          where: { userId: newState.id, guildId: newState.guild.id },
+          attributes: ["speakerId"]
+        });
+
         const msg = `${newState.member.displayName}が退出`;
         manager.readMsg({
           userName: "",
           message: msg,
-          speakerId: 0,
+          speakerId: speakerId !== null ? speakerId.getDataValue("speakerId") : 0,
           guildId: oldState.guild.id
         });
 

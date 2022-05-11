@@ -16,6 +16,7 @@ const Speaker = sequelize.define(
     },
     speakerId: {
       type: DataTypes.INTEGER,
+      allowNull: false
     }
   },
   {
