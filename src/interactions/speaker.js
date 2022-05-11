@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, SlashCommandNumberOption } = require("@discordjs/builders");
 const { createEmbedMessage } = require("../util");
 const Speaker = require("../../models/speaker");
+const { voicevox } = require("../../voicevox.json");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -10,33 +11,37 @@ module.exports = {
       .setName("話者")
       .setDescription("話者を選択してください")
       .setRequired(true)
-      .addChoice("四国めたん（ノーマル）", 2)
-      .addChoice("四国めたん（あまあま）", 0)
-      .addChoice("四国めたん（ツンツン）", 6)
-      .addChoice("四国めたん（セクシー）", 4)
-      .addChoice("ずんだもん（ノーマル）", 3)
-      .addChoice("ずんだもん（あまあま）", 1)
-      .addChoice("ずんだもん（ツンツン）", 7)
-      .addChoice("ずんだもん（セクシー）", 5)
-      .addChoice("春日部つむぎ", 8)
-      .addChoice("雨晴はう", 10)
-      .addChoice("波音リツ", 9)
-      .addChoice("玄野武宏", 11)
-      .addChoice("白上虎太郎", 12)
-      .addChoice("青山龍星", 13)
-      .addChoice("冥鳴ひまり", 14)
-      .addChoice("九州そら（ノーマル）", 16)
-      .addChoice("九州そら（あまあま）", 15)
-      .addChoice("九州そら（ツンツン）", 18)
-      .addChoice("九州そら（セクシー）", 17)
-      .addChoice("九州そら（ささやき）", 19)
+      .addChoice(voicevox[2].name, 2)
+      .addChoice(voicevox[0].name, 0)
+      .addChoice(voicevox[6].name, 6)
+      .addChoice(voicevox[4].name, 4)
+      .addChoice(voicevox[3].name, 3)
+      .addChoice(voicevox[1].name, 1)
+      .addChoice(voicevox[7].name, 7)
+      .addChoice(voicevox[5].name, 5)
+      .addChoice(voicevox[8].name, 8)
+      .addChoice(voicevox[10].name, 10)
+      .addChoice(voicevox[9].name, 9)
+      .addChoice(voicevox[11].name, 11)
+      .addChoice(voicevox[12].name, 12)
+      .addChoice(voicevox[13].name, 13)
+      .addChoice(voicevox[14].name, 14)
+      .addChoice(voicevox[16].name, 16)
+      .addChoice(voicevox[15].name, 15)
+      .addChoice(voicevox[18].name, 18)
+      .addChoice(voicevox[17].name, 17)
+      .addChoice(voicevox[19].name, 19)
     ),
   async execute(interaction) {
+    const speakerId = interaction.options.getNumber("話者");
     await Speaker.upsert({
       userId: interaction.user.id,
       guildId: interaction.guildId,
-      speakerId: interaction.options.getNumber("話者")
+      speakerId: speakerId
     });
-    interaction.reply(createEmbedMessage("info", "話者を設定しました"));
+    interaction.reply(createEmbedMessage("info",
+      "話者を`VOICEVOX:" + voicevox[speakerId].name + "`に設定しました\n" +
+      `音源の利用規約は[こちら](${voicevox[speakerId].term})`
+    ));
   }
 }

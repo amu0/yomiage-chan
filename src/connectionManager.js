@@ -2,6 +2,7 @@
 const voice = require("@discordjs/voice");
 const axios = require("axios");
 const { createEmbedMessage } = require("./util");
+const { voicevox } = require("../voicevox.json");
 const Speaker = require("../models/speaker");
 const Guild = require("../models/guild");
 const Dictionary = require("../models/dictionary");
@@ -43,7 +44,12 @@ class connectionManager {
     });
     this.connection.subscribe(this.player);
 
-    interaction.reply(createEmbedMessage("info", "読み上げを開始します"));
+    interaction.reply(createEmbedMessage("info",
+      "読み上げを開始します\n" +
+      "デフォルトの音声は`VOICEVOX:四国めたん`です\n" +
+      "音源を利用する時は各規約を遵守してください\n" +
+      "[VOICEVOXの利用規約](https://voicevox.hiroshiba.jp/term/)"
+    ));
   }
 
   isConnecting() {
