@@ -1,7 +1,9 @@
 node_modules/
 
 .env
+*.dict
 
 *.sqlite
+*.sqlite-journal
 
 package-lock.json
