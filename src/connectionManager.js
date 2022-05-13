@@ -44,12 +44,29 @@ class connectionManager {
     });
     this.connection.subscribe(this.player);
 
-    interaction.reply(createEmbedMessage("info",
-      "読み上げを開始します\n" +
-      "デフォルトの音声は`VOICEVOX:四国めたん`です\n" +
-      "音源を利用する時は各規約を遵守してください\n" +
-      "[VOICEVOXの利用規約](https://voicevox.hiroshiba.jp/term/)"
-    ));
+    interaction.reply({
+      embeds: [{
+        title: "INFO",
+        description: "読み上げを開始します\n" +
+          "デフォルトの音声は`VOICEVOX:四国めたん`です\n" +
+          "音源を利用する時は各規約を遵守してください\n" +
+          "[VOICEVOXの利用規約](https://voicevox.hiroshiba.jp/term/)",
+        fields: [
+          {
+            name: "対象VC",
+            value: `<#${memberVC.id}>`,
+            inline: true
+          },
+          {
+            name: "対象チャット",
+            value: `<#${interaction.channelId}>`,
+            inline: true
+          }
+        ],
+        color: "43a1ec",
+        timestamp: new Date()
+      }]
+    })
   }
 
   isConnecting() {
