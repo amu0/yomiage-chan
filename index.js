@@ -2,7 +2,15 @@ require("dotenv").config();
 const fs = require("fs");
 const discordjs = require("discord.js");
 
-const client = new discordjs.Client({ intents: Object.keys(discordjs.Intents.FLAGS) });
+const FLAGS = discordjs.Intents.FLAGS;
+const client = new discordjs.Client({
+  intents: [
+    FLAGS.GUILDS,
+    FLAGS.GUILD_MEMBERS,
+    FLAGS.GUILD_VOICE_STATES,
+    FLAGS.GUILD_MESSAGES
+  ]
+});
 
 client.login(process.env.DISCORD_TOKEN);
 
