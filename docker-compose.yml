@@ -10,7 +10,3 @@ services:
   voicevox:
     image: voicevox/voicevox_engine:cpu-ubuntu20.04-latest
     tty: true
-    ports:
-      - 50021:50021
-    volumes:
-      - .:/voicevox
