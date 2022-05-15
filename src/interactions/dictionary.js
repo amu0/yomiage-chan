@@ -19,6 +19,8 @@ module.exports = {
     const guildId = interaction.guildId;
     switch (interaction.options.getSubcommand()) {
       case "export":
+        await interaction.reply(createEmbedMessage("info", "辞書を出力します"));
+
         const fileName = `${guildId}_${new Date().getTime()}.dict`;
 
         const stream = fs.createWriteStream(fileName, { encoding: "utf16le" });
@@ -43,7 +45,9 @@ module.exports = {
         await Promise.all(promises);
         stream.end();
 
-        await interaction.reply({ files: [fileName] });
+        await interaction.editReply(createEmbedMessage("info", "辞書の出力が完了しました"));
+        await interaction.channel.send({ files: [fileName] });
+
         fs.unlink(fileName, (err) => {
           if (err) console.error(err);
         });
