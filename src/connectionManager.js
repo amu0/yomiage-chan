@@ -82,12 +82,20 @@ class connectionManager {
 
   async messageProcessor(rawMsg) {
     if (!this.isConnecting() || rawMsg.channelId !== this.readingCh.id) return;
+    let message = rawMsg.content;
+    console.log(message);
 
     // URLを置き換え
-    let message = rawMsg.content.replaceAll(/https?:\/\/[\w!?/+\-_~;.,*&@#$%()'[\]]+/g, "ユーアールエル");
-
+    message = rawMsg.content.replaceAll(/https?:\/\/[\w!?/+\-_~;.,*&@#$%()'[\]]+/g, "ユーアールエル");
     // 絵文字を置き換え
-    message = message.replaceAll(/(<a?)?:\w+:(\d{18}>)?/g, "えもじ");
+    message = message.replaceAll(/(<a?)?:\w+:(\d{18}>)?/g, "絵文字");
+    // コードブロックを置き換え
+    message = message.replaceAll(/```(.|\s|\n)+```/g, "コードブロック");
+    // スポイラー置き換え
+    message = message.replaceAll(/\|\|.+\|\|/g, "ネタバレ");
+    // 引用を置き換え
+    message = message.replaceAll(/(^|\n)> .*/g, "引用");
+    message = message.replaceAll(/(引用)+/g, "引用") // 複数行にわたる引用で「引用引用引用」とならないようにする
 
     // メンションを置き換え
     const messageMentions = rawMsg.mentions;
