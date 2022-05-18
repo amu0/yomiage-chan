@@ -1,8 +1,7 @@
 "use strict";
 const voice = require("@discordjs/voice");
+const { MessageMentions: { CHANNELS_PATTERN, ROLES_PATTERN, USERS_PATTERN } } = require("discord.js");
 const axios = require("axios");
-const { createEmbedMessage } = require("./util");
-const { voicevox } = require("../voicevox.json");
 const Speaker = require("../models/speaker");
 const Guild = require("../models/guild");
 const Dictionary = require("../models/dictionary");
@@ -83,9 +82,50 @@ class connectionManager {
 
   async messageProcessor(rawMsg) {
     if (!this.isConnecting() || rawMsg.channelId !== this.readingCh.id) return;
-    // 長いメッセージは省略する
+
+    // URLを置き換え
     let message = rawMsg.content.replaceAll(/https?:\/\/[\w!?/+\-_~;.,*&@#$%()'[\]]+/g, "ユーアールエル");
-    message = message.length > 255 ? message.slice(0, 128) + "、以下略" : message;
+
+    // 絵文字を置き換え
+    message = message.replaceAll(/(<a?)?:\w+:(\d{18}>)?/g, "えもじ");
+
+    // メンションを置き換え
+    const messageMentions = rawMsg.mentions;
+    if (messageMentions) {
+      const regExpMap = new Map();// key:regExp, value:NameString
+
+      // 全体メンション
+      regExpMap.set(/@everyone/g, "アットエブリィワン");
+      regExpMap.set(/@here/g, "アットヒア");
+
+      messageMentions.members.forEach((guildMember, id) => {
+        const regExp = new RegExp(`<@!?${id}>`, "g");
+        regExpMap.set(regExp, `アット${guildMember.displayName}`);
+      });
+      messageMentions.roles.forEach((role, id) => {
+        const regExp = new RegExp(`<@&${id}>`, "g");
+        regExpMap.set(regExp, `アット${role.name}`);
+      });
+      messageMentions.channels.forEach((channel, id) => {
+        // チャンネルが他のサーバーのものであればスキップ
+        if (channel.guildId !== rawMsg.guildId) return;
+
+        const regExp = new RegExp(`<#${id}>`, "g");
+        regExpMap.set(regExp, `チャンネル、${channel.name}`);
+      });
+
+      // 置き換え実行
+      regExpMap.forEach((value, key) => {
+        message = message.replaceAll(key, value);
+      });
+    }
+    // 当該サーバー以外のメンションを処理
+    message = message.replaceAll(USERS_PATTERN, "アット不明なユーザー");
+    message = message.replaceAll(ROLES_PATTERN, "アット不明なロール");
+    message = message.replaceAll(CHANNELS_PATTERN, "アット不明なチャンネル");
+
+    // 長いメッセージは省略する
+    message = message.length > 255 ? message.slice(0, 128) : message;
 
     // 添付ファイル
     let attachmentTypes = [];
