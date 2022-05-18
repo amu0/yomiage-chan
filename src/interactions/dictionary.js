@@ -54,6 +54,8 @@ module.exports = {
         break;
 
       case "delete":
+        if (!interaction.memberPermissions.has("ADMINISTRATOR")) return interaction.reply(createEmbedMessage("error", "このコマンドは管理者のみ利用可能です"));
+
         await interaction.reply(createEmbedMessage("info", "辞書を削除します"));
 
         Dictionary.destroy({

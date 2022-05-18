@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, SlashCommandBooleanOption } = require("@discordjs/builders");
 const Guild = require("../../models/guild");
+const { createEmbedMessage } = require("../util");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -15,6 +16,8 @@ module.exports = {
     ),
 
   async execute(interaction) {
+    if (!interaction.memberPermissions.has("ADMINISTRATOR")) return interaction.reply(createEmbedMessage("error", "このコマンドは管理者のみ利用可能です"));
+
     if (interaction.options.getBoolean("名前の読み上げ") !== null) {
       await Guild.upsert({
         guildId: interaction.guildId,
