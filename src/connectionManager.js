@@ -5,7 +5,7 @@ const axios = require("axios");
 const Speaker = require("../models/speaker");
 const Guild = require("../models/guild");
 const Dictionary = require("../models/dictionary");
-const VOICEVOX_URL = process.env.VOICEVOX_URL;
+const VOICEVOX_URL = process.env.VOICEVOX_URL || "http://voicevox:50021";
 
 class connectionManager {
 

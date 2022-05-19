@@ -13,7 +13,6 @@
     "discord.js": "^13.6.0",
     "dotenv": "^16.0.0",
     "https": "^1.0.0",
-    "node-voicevox-engine": "^0.1.5",
     "sequelize": "^6.19.0",
     "sodium": "^3.0.2",
     "sqlite3": "^5.0.6"
@@ -22,6 +21,5 @@
     "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC"
+  "author": ""
 }
