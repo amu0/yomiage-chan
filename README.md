@@ -3,7 +3,7 @@
 
 ## 機能
 - VOICEVOXを利用したチャットの読み上げ
-- 20種類のボイスを利用可能（ユーザーごと）
+- 21種類のボイスを利用可能（ユーザーごと）
 - ユーザーの入退出の読み上げ
 - 単語登録
 - 辞書のインポート・エクスポート
@@ -43,6 +43,9 @@
 6. 終了方法<br>
    Discord内で`/shutdown` コマンドを実行してBOTを終了します。<br>
    `docker-compose down` でコンテナを破棄します。
+
+## 使い方
+`/help`コマンドを実行すると一覧が見られます。
 
 ## Special Thanks
 このBOTは [OSS版VOICEVOX Engine](https://github.com/VOICEVOX/voicevox_engine) を利用しています。<br>
