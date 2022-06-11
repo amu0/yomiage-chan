@@ -31,6 +31,7 @@ module.exports = {
       .addChoice(voicevox[18].name, 18)
       .addChoice(voicevox[17].name, 17)
       .addChoice(voicevox[19].name, 19)
+      .addChoice(voicevox[20].name, 20)
     ),
   async execute(interaction) {
     const speakerId = interaction.options.getNumber("話者");
@@ -39,8 +40,10 @@ module.exports = {
       guildId: interaction.guildId,
       speakerId: speakerId
     });
+
+    const credit = voicevox[speakerId].credit ? voicevox[speakerId].credit : `VOICEVOX:${voicevox[speakerId]}`
     interaction.reply(createEmbedMessage("info",
-      "話者を`VOICEVOX:" + voicevox[speakerId].name + "`に設定しました\n" +
+      "話者を`" + credit + "`に設定しました\n" +
       `音源の利用規約は[こちら](${voicevox[speakerId].term})`
     ));
   }
