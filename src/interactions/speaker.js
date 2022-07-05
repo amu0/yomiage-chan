@@ -41,7 +41,7 @@ module.exports = {
       speakerId: speakerId
     });
 
-    const credit = voicevox[speakerId].credit ? voicevox[speakerId].credit : `VOICEVOX:${voicevox[speakerId]}`
+    const credit = voicevox[speakerId].credit ? voicevox[speakerId].credit : `VOICEVOX:${voicevox[speakerId].name}`
     interaction.reply(createEmbedMessage("info",
       "話者を`" + credit + "`に設定しました\n" +
       `音源の利用規約は[こちら](${voicevox[speakerId].term})`
